@@ -22,7 +22,7 @@ const getProductName = (product: any): string => {
 
 // Helper function to safely get product image
 const getProductImage = (item: any): string | null => {
-  const baseUrl = process.env.NEXT_PUBLIC_IMG_URL ;
+  const baseUrl = process.env.NEXT_PUBLIC_IMG_URL;
   
   const formatImageUrl = (imagePath: string): string => {
     if (!imagePath) return '';
@@ -46,7 +46,6 @@ const getProductImage = (item: any): string | null => {
     }
     
     // Now construct the URL - baseUrl already includes '/uploads'
-    // So we don't need to add it again
     const fullUrl = `${baseUrl}/${cleanPath}`;
     console.log('🖼️ Constructed image URL:', fullUrl);
     return fullUrl;
@@ -54,8 +53,26 @@ const getProductImage = (item: any): string | null => {
   
   let imageUrl = null;
   
-  // Try product images array
-  if (item.product?.images && item.product.images.length > 0) {
+  // ✅ FIRST: Check variantImages directly from cart item (for logged-in users)
+  if (item.variantImages && item.variantImages.length > 0) {
+    const firstImage = item.variantImages[0];
+    if (firstImage) {
+      imageUrl = formatImageUrl(firstImage);
+      console.log('📦 Found variantImages from cart item:', firstImage);
+    }
+  }
+  
+  // ✅ SECOND: Try selectedVariant images (for guest users)
+  if (!imageUrl && item.selectedVariant?.images && item.selectedVariant.images.length > 0) {
+    const firstVariantImage = item.selectedVariant.images[0];
+    if (firstVariantImage.image) {
+      imageUrl = formatImageUrl(firstVariantImage.image);
+      console.log('🎨 Found selectedVariant image:', firstVariantImage.image);
+    }
+  }
+  
+  // ✅ THIRD: Try product images array (fallback)
+  if (!imageUrl && item.product?.images && item.product.images.length > 0) {
     const firstImage = item.product.images[0];
     if (firstImage.image) {
       imageUrl = formatImageUrl(firstImage.image);
@@ -63,16 +80,7 @@ const getProductImage = (item: any): string | null => {
     }
   }
   
-  // Try variant image if selected and no product image found
-  if (!imageUrl && item.selectedVariant?.images && item.selectedVariant.images.length > 0) {
-    const firstVariantImage = item.selectedVariant.images[0];
-    if (firstVariantImage.image) {
-      imageUrl = formatImageUrl(firstVariantImage.image);
-      console.log('🎨 Found variant image:', firstVariantImage.image);
-    }
-  }
-  
-  // Try ogImage
+  // ✅ FOURTH: Try ogImage (last fallback)
   if (!imageUrl && item.product?.ogImage) {
     imageUrl = formatImageUrl(item.product.ogImage);
     console.log('🖼️ Found ogImage:', item.product.ogImage);
@@ -177,10 +185,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
           {/* Guest Warning */}
           {isGuest && (
-            <div className="bg-[#D97A22]/10 border-b border-[#D97A22]/20 text-[#D97A22] px-4 py-1 text-xs">
+            <div className="bg-[#C8D222]/10 border-b border-[#C8D222]/20 text-[#C8D222] px-4 py-1 text-xs">
               <p>
                 🛒 Guest •{' '}
-                <Link href="/signup" className="font-semibold underline hover:text-[#D97A22]/80">
+                <Link href="/signup" className="font-semibold underline hover:text-[#C8D222]/80">
                   Sign up to save
                 </Link>
               </p>
@@ -199,7 +207,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <p className="text-gray-600 mb-4">Your cart is empty</p>
                 <button
                   onClick={onClose}
-                  className="text-[#D97A22] hover:text-[#D97A22]/80 font-medium transition-colors"
+                  className="text-[#C8D222] hover:text-[#C8D222]/80 font-medium transition-colors"
                 >
                   Continue Shopping
                 </button>
@@ -262,7 +270,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           
                           {/* Variant info */}
                           {item.selectedVariant && (
-                            <p className="text-[#D97A22] text-[10px] font-medium mt-0.5">
+                            <p className="text-[#C8D222] text-[10px] font-medium mt-0.5">
                               {item.selectedVariant.variantName}
                             </p>
                           )}
@@ -275,7 +283,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               <button 
                                 onClick={() => updateCartItem(item._id, item.quantity - 1)}
                                 disabled={item.quantity <= 1 || isRemoving}
-                                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-[#D97A22] hover:bg-gray-50 disabled:opacity-30 text-sm"
+                                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-[#C8D222] hover:bg-gray-50 disabled:opacity-30 text-sm"
                               >
                                 -
                               </button>
@@ -283,7 +291,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                               <button 
                                 onClick={() => updateCartItem(item._id, item.quantity + 1)}
                                 disabled={item.quantity >= maxStock || isRemoving}
-                                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-[#D97A22] hover:bg-gray-50 disabled:opacity-30 text-sm"
+                                className="w-6 h-6 flex items-center justify-center text-gray-600 hover:text-[#C8D222] hover:bg-gray-50 disabled:opacity-30 text-sm"
                               >
                                 +
                               </button>
@@ -331,7 +339,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Shipping</span>
-                <span className="text-[#D97A22] font-medium">FREE</span>
+                <span className="text-[#C8D222] font-medium">FREE</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-600">Tax (5%)</span>
@@ -347,7 +355,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="space-y-1.5">
               <button
                 onClick={handleCheckout}
-                className="w-full py-2.5 rounded-lg font-medium text-xs transition-all duration-200 shadow-sm bg-gradient-to-r from-[#D97A22] via-[#D97A22] to-[#D97A22] text-white hover:from-[#c56a1e] hover:via-[#c56a1e] hover:to-[#c56a1e]"
+                className="w-full py-2.5 rounded-lg font-medium text-xs transition-all duration-200 shadow-sm bg-[#C8D222] text-black hover:bg-[#b8c41f]"
               >
                 Proceed to Checkout
               </button>

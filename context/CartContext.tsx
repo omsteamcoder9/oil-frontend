@@ -146,7 +146,7 @@ const handleGuestAddToCart = (product: Product, quantity: number, selectedVarian
     items: cart.items ? [...cart.items] : []
   };
   
-  // ✅ MODIFIED: Check for same variant too
+  // Check for same variant
   const existingItemIndex = guestCart.items.findIndex(
     item => item && item.product && item.product._id === product._id && 
             item.selectedVariant?._id === selectedVariant?._id
@@ -154,31 +154,37 @@ const handleGuestAddToCart = (product: Product, quantity: number, selectedVarian
   
   if (existingItemIndex > -1) {
     guestCart.items[existingItemIndex].quantity += quantity;
-    guestCart.items[existingItemIndex].price = selectedVariant?.price || product.basePrice; // ✅ Use variant price
+    guestCart.items[existingItemIndex].price = selectedVariant?.price || product.basePrice;
     guestCart.items[existingItemIndex].updatedAt = new Date().toISOString();
     console.log('🛒 Updated existing item with variant');
   } else {
     const guestItemId = `guest-${product._id}-${selectedVariant?._id || 'base'}-${Date.now()}`;
     
+    // ✅ FIX: Ensure variant includes images
+    const variantWithImages = selectedVariant ? {
+      ...selectedVariant,
+      images: selectedVariant.images || [] // ✅ Preserve images
+    } : undefined;
+    
     const newItem: CartItem = {
       _id: guestItemId,
       product,
-      selectedVariant, // ✅ STORE VARIANT INFO
+      selectedVariant: variantWithImages, // ✅ Store variant with images
       quantity,
-      price: selectedVariant?.price || product.basePrice, // ✅ Use variant price
+      price: selectedVariant?.price || product.basePrice,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     guestCart.items.push(newItem);
-    console.log('🛒 Added new item with variant');
+    console.log('🛒 Added new item with variant and images');
   }
   
   // Recalculate totals
   guestCart.totalItems = guestCart.items.reduce((sum, item) => sum + item.quantity, 0);
-guestCart.totalPrice = guestCart.items.reduce((sum, item) => 
-  sum + (item.price * item.quantity), 0); // ✅ CORRECT: Using item.price  guestCart.updatedAt = new Date().toISOString();
+  guestCart.totalPrice = guestCart.items.reduce((sum, item) => 
+    sum + (item.price * item.quantity), 0);
+  guestCart.updatedAt = new Date().toISOString();
   
-  // Save to localStorage
   saveGuestCart(guestCart);
   
   return guestCart;
@@ -232,10 +238,9 @@ guestCart.totalPrice = guestCart.items.reduce((sum, item) =>
     return emptyCart;
   };
 
-  // ✅ FIXED: addToCart function with proper guest detection
-// Line 186 - Update addToCart function signature
 const addToCart = async (product: Product, quantity: number, selectedVariant?: ProductVariant) => {
   console.log('🛒 addToCart called, isGuest:', isGuest, 'variant:', selectedVariant?.variantName);
+  console.log('🛒 Variant images:', selectedVariant?.images?.length || 0);
   
   try {
     setAddingProductId(product._id);
@@ -247,11 +252,30 @@ const addToCart = async (product: Product, quantity: number, selectedVariant?: P
       setCart(updatedCart);
     } else {
       console.log('🛒 Using API cart handler with variant');
+      // ✅ For authenticated users, also store variant with images
+      const variantId = selectedVariant?._id || selectedVariant?.variantName;
       const updatedCart = await cartAPI.addToCart({
         productId: product._id,
-        variantId: selectedVariant?._id || selectedVariant?.variantName,  // ✅ Send variant ID to backend
+        variantId: variantId,
         quantity
       });
+      
+      // ✅ Ensure the cart item has the variant with images
+      if (updatedCart.items) {
+        updatedCart.items = updatedCart.items.map(item => {
+          if (item.product._id === product._id && item.selectedVariant) {
+            return {
+              ...item,
+              selectedVariant: {
+                ...item.selectedVariant,
+                images: selectedVariant?.images || item.selectedVariant.images || []
+              }
+            };
+          }
+          return item;
+        });
+      }
+      
       setCart(updatedCart);
     }
   } catch (error) {

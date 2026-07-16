@@ -28,9 +28,7 @@ const handleApiError = async (response: Response, defaultMessage: string) => {
 export async function getCart(): Promise<Cart> {
   const token = getToken();
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -93,9 +91,7 @@ export async function updateCartItem(itemId: string, updateData: UpdateCartItemD
 export async function removeFromCart(itemId: string): Promise<Cart> {
   const token = getToken();
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -114,9 +110,8 @@ export async function removeFromCart(itemId: string): Promise<Cart> {
 export async function clearCart(): Promise<{ message: string }> {
   const token = getToken();
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  // ✅ FIX: Don't set Content-Type for DELETE with no body
+  const headers: HeadersInit = {};
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

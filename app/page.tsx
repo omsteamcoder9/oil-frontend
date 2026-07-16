@@ -9,7 +9,6 @@ export default async function HomePage() {
   return (
     <HomeClient 
       categories={categories}
-      featuredCategories={featuredCategories}
     />
   );
 }

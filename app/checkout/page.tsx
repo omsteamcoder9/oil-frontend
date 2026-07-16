@@ -136,7 +136,7 @@ export default function CheckoutPage() {
   
   const [buyNowOrder, setBuyNowOrder] = useState<any>(null);
   const [isBuyNowMode, setIsBuyNowMode] = useState(false);
-  const [checkingBuyNow, setCheckingBuyNow] = useState(true); // ADDED
+  const [checkingBuyNow, setCheckingBuyNow] = useState(true);
 
   useEffect(() => {
     if (user?.email && !formData.email) {
@@ -164,15 +164,15 @@ export default function CheckoutPage() {
         console.log('🔍🔍🔍 DEBUG: No storedOrder found in sessionStorage');
       }
     }
-    setCheckingBuyNow(false); // ADDED
+    setCheckingBuyNow(false);
   }, [isBuyNowParam, setBuyNowMode]);
 
   useEffect(() => {
-    if (checkingBuyNow) return; // ADDED
+    if (checkingBuyNow) return;
     if (!isBuyNowMode && cart.items.length === 0) {
       router.push('/cart');
     }
-  }, [cart.items.length, router, isBuyNowMode, checkingBuyNow]); // MODIFIED
+  }, [cart.items.length, router, isBuyNowMode, checkingBuyNow]);
 
   useEffect(() => {
     if (user && !token) {
@@ -258,11 +258,11 @@ export default function CheckoutPage() {
   };
 
   const handleRazorpayPayment = async (): Promise<void> => {
- console.log('🚨🚨🚨 INSIDE handleRazorpayPayment - BEFORE ANYTHING ELSE 🚨🚨🚨');
-  console.log('isBuyNowMode:', isBuyNowMode);
-  console.log('buyNowOrder:', buyNowOrder);
-  console.log('cart.items:', cart.items);
-  console.log('getDisplayItems():', getDisplayItems());
+    console.log('🚨🚨🚨 INSIDE handleRazorpayPayment - BEFORE ANYTHING ELSE 🚨🚨🚨');
+    console.log('isBuyNowMode:', isBuyNowMode);
+    console.log('buyNowOrder:', buyNowOrder);
+    console.log('cart.items:', cart.items);
+    console.log('getDisplayItems():', getDisplayItems());
     try {
       setPaymentLoading(true);
       setAuthError('');
@@ -329,7 +329,9 @@ export default function CheckoutPage() {
               variantId: item.selectedVariant?._id,
               variantName: item.selectedVariant?.variantName,
               price: item.price,
-              quantity: item.quantity
+              quantity: item.quantity,
+              weight: item.weight || item.selectedVariant?.weight || 0,        // ✅ Include weight
+              weightUnit: item.weightUnit || item.selectedVariant?.weightUnit || 'gram' // ✅ Include weight unit
             })),
             shippingAddress: shippingAddress,
             paymentMethod: 'razorpay' as const
@@ -350,7 +352,9 @@ export default function CheckoutPage() {
               variantId: item.selectedVariant?._id,
               variantName: item.selectedVariant?.variantName,
               price: item.price,
-              quantity: item.quantity
+              quantity: item.quantity,
+              weight: item.weight || item.selectedVariant?.weight || 0,        // ✅ Include weight
+              weightUnit: item.weightUnit || item.selectedVariant?.weightUnit || 'gram' // ✅ Include weight unit
             })),
             shippingAddress: shippingAddress,
             guestUser: {
@@ -535,7 +539,9 @@ export default function CheckoutPage() {
             variantId: item.selectedVariant?._id,
             variantName: item.selectedVariant?.variantName,
             price: item.price,
-            quantity: item.quantity
+            quantity: item.quantity,
+            weight: item.weight || item.selectedVariant?.weight || 0,        // ✅ Include weight
+            weightUnit: item.weightUnit || item.selectedVariant?.weightUnit || 'gram' // ✅ Include weight unit
           })),
           shippingAddress: shippingAddress,
           paymentMethod: 'cod' as const
@@ -555,7 +561,9 @@ export default function CheckoutPage() {
             variantId: item.selectedVariant?._id,
             variantName: item.selectedVariant?.variantName,
             price: item.price,
-            quantity: item.quantity
+            quantity: item.quantity,
+            weight: item.weight || item.selectedVariant?.weight || 0,        // ✅ Include weight
+            weightUnit: item.weightUnit || item.selectedVariant?.weightUnit || 'gram' // ✅ Include weight unit
           })),
           shippingAddress: shippingAddress,
           guestUser: {
@@ -599,7 +607,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // MODIFIED - Add checkingBuyNow to loading condition
   if (settingsLoading || checkingBuyNow) {
     return (
       <div className="min-h-screen bg-[#f2f2f2] flex items-center justify-center">
@@ -618,7 +625,6 @@ export default function CheckoutPage() {
   const shippingFee = 0;
   const total = subtotal + tax + shippingFee;
 
-  // MODIFIED - Add checkingBuyNow condition
   if (displayItems.length === 0 && !settingsLoading && !checkingBuyNow) {
     router.push('/cart');
     return null;
@@ -843,18 +849,27 @@ export default function CheckoutPage() {
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
               
               <div className="space-y-3 mb-4">
-                {displayItems.map((item: any) => (
-                  <div key={item.product._id} className="flex justify-between items-center border-b border-gray-200 pb-3">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.product.name}</p>
-                      {item.selectedVariant && (
-                        <p className="text-xs text-[#D97A22] font-medium">📦 Pack: {item.selectedVariant.variantName}</p>
-                      )}
-                      <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                {displayItems.map((item: any) => {
+                  const itemWeight = item.weight || item.selectedVariant?.weight || 0;
+                  const itemWeightUnit = item.weightUnit || item.selectedVariant?.weightUnit || 'gram';
+                  const weightDisplay = itemWeight > 0 ? `${itemWeight} ${itemWeightUnit}` : '';
+                  
+                  return (
+                    <div key={item.product._id} className="flex justify-between items-center border-b border-gray-200 pb-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{item.product.name}</p>
+                        {item.selectedVariant && (
+                          <p className="text-xs text-[#D97A22] font-medium">📦 Pack: {item.selectedVariant.variantName}</p>
+                        )}
+                        {weightDisplay && (
+                          <p className="text-xs text-gray-500">⚖️ Weight: {weightDisplay}</p>
+                        )}
+                        <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-semibold text-sm sm:text-base">₹{((item.price || 0) * item.quantity).toFixed(2)}</p>
                     </div>
-                    <p className="font-semibold text-sm sm:text-base">₹{((item.price || 0) * item.quantity).toFixed(2)}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="border-t pt-3 space-y-2">

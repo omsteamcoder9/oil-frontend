@@ -13,7 +13,6 @@ export default function CartPage() {
     router.push('/checkout');
   };
 
-  // Use cart data directly from backend response
   const itemCount = cart.totalItems || 0;
   const subtotal = cart.totalPrice || 0;
   const tax = subtotal * 0.05;
@@ -31,7 +30,7 @@ export default function CartPage() {
             <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">Add some farm tools to your cart to see them here.</p>
             <Link 
               href="/products"
-              className="inline-block bg-gradient-to-r from-[#D97A22] via-[#D97A22] to-[#D97A22] text-white px-6 py-3 rounded-lg hover:from-[#c56a1e] hover:via-[#c56a1e] hover:to-[#c56a1e] transition-all duration-200 font-medium text-sm sm:text-base shadow-lg hover:shadow-[#D97A22]/25"
+              className="inline-block bg-[#C8D222] text-black px-6 py-3 rounded-lg hover:bg-[#b8c41f] transition-all duration-200 font-medium text-sm sm:text-base shadow-lg hover:shadow-[#C8D222]/25"
             >
               Continue Shopping
             </Link>
@@ -47,10 +46,10 @@ export default function CartPage() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Shopping Cart</h1>
           {isGuest && (
-            <div className="bg-gradient-to-r from-[#D97A22]/10 via-[#D97A22]/10 to-[#D97A22]/10 border border-[#D97A22]/20 text-[#D97A22] px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm">
+            <div className="bg-[#C8D222]/10 border border-[#C8D222]/20 text-[#C8D222] px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm">
               <p>
                 🛒 Shopping as Guest •{' '}
-                <Link href="/signup" className="font-semibold underline hover:text-[#D97A22] transition-colors duration-200">
+                <Link href="/signup" className="font-semibold underline hover:text-[#C8D222] transition-colors duration-200">
                   Sign up to save your cart
                 </Link>
               </p>
@@ -76,43 +75,64 @@ export default function CartPage() {
 
               <div className="space-y-4 sm:space-y-6">
                 {cart.items.map((item) => {
-                  // Get the first image or use a fallback
-                  const firstImage = item.product?.images?.[0]?.image;
-                  const hasImage = firstImage && firstImage.trim() !== '';
-                  const imageUrl = hasImage 
-                    ? `${process.env.NEXT_PUBLIC_BASE_URL}${firstImage}`
-                    : null;
+                  // ✅ FIX: Check variant images FIRST, then product images
+               // In CartPage.tsx - getImageUrl function
+const getImageUrl = () => {
+  // ✅ FIRST: Check variantImages from cart item (backend stored for logged-in users)
+  if (item.variantImages && item.variantImages.length > 0) {
+    const variantImage = item.variantImages[0];
+    if (variantImage && variantImage.trim() !== '') {
+      return `${process.env.NEXT_PUBLIC_BASE_URL}${variantImage}`;
+    }
+  }
+  
+  // ✅ SECOND: Check selectedVariant (for guest carts)
+  if (item.selectedVariant?.images && item.selectedVariant.images.length > 0) {
+    const variantImage = item.selectedVariant.images[0]?.image;
+    if (variantImage && variantImage.trim() !== '') {
+      return `${process.env.NEXT_PUBLIC_BASE_URL}${variantImage}`;
+    }
+  }
+  
+  // ✅ THIRD: Check product images (fallback)
+  const productImage = item.product?.images?.[0]?.image;
+  if (productImage && productImage.trim() !== '') {
+    return `${process.env.NEXT_PUBLIC_BASE_URL}${productImage}`;
+  }
+  
+  return null;
+};
+
+                  const imageUrl = getImageUrl();
                   
                   return (
                     <div key={item._id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border-b border-gray-200 pb-4 sm:pb-6">
                       {/* Product Image and Info - Mobile Layout */}
                       <div className="flex items-center gap-3 sm:gap-4">
-                {imageUrl ? (
-  <Image
-    src={imageUrl}
-    alt={item.product?.name || 'Product image'}
-    width={80}
-    height={80}
-    className="object-cover rounded-lg w-16 h-16 sm:w-50 sm:h-20"
-  />
-) : (
-  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center">
-    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  </div>
-)}
+                        {imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            alt={item.selectedVariant?.variantName || item.product?.name || 'Product image'}
+                            width={80}
+                            height={80}
+                            className="object-cover rounded-lg w-16 h-16 sm:w-20 sm:h-20"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        )}
                         
                         {/* Product Info - Mobile Layout */}
                         <div className="sm:hidden flex-grow">
                           <h3 className="font-semibold text-gray-900 text-sm line-clamp-2">
                             {item.product?.name || 'Unnamed Product'}
                           </h3>
-                          {/* ✅ SHOW SELECTED PACK/VARIANT */}
                           {item.selectedVariant && (
-                            <p className="text-[#D97A22] text-xs font-medium">📦 Variant: {item.selectedVariant.variantName}</p>
+                            <p className="text-[#C8D222] text-xs font-medium">📦 Variant: {item.selectedVariant.variantName}</p>
                           )}
-                          {/* ✅ USE VARIANT PRICE IF EXISTS */}
                           <p className="text-gray-600 text-xs">₹{item.price || 0}</p>
                           {item.product?.stock && item.product.stock < 10 && (
                             <p className="text-orange-600 text-xs mt-1">
@@ -127,11 +147,9 @@ export default function CartPage() {
                         <h3 className="font-semibold text-gray-900">
                           {item.product?.name || 'Unnamed Product'}
                         </h3>
-                        {/* ✅ SHOW SELECTED PACK/VARIANT */}
                         {item.selectedVariant && (
-                          <p className="text-[#D97A22] text-sm font-medium">📦 Variant: {item.selectedVariant.variantName}</p>
+                          <p className="text-[#C8D222] text-sm font-medium">📦 Variant: {item.selectedVariant.variantName}</p>
                         )}
-                        {/* ✅ USE VARIANT PRICE IF EXISTS */}
                         <p className="text-gray-600 text-sm">₹{item.price || 0}</p>
                         {item.product?.stock && item.product.stock < 10 && (
                           <p className="text-orange-600 text-xs mt-1">
@@ -146,7 +164,7 @@ export default function CartPage() {
                           <button 
                             onClick={() => updateCartItem(item._id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gradient-to-r hover:from-[#D97A22]/10 hover:via-[#D97A22]/10 hover:to-[#D97A22]/10 hover:border-[#D97A22] hover:text-[#D97A22] disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all duration-200 cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-[#C8D222]/10 hover:border-[#C8D222] hover:text-[#C8D222] disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all duration-200 cursor-pointer"
                           >
                             -
                           </button>
@@ -154,7 +172,7 @@ export default function CartPage() {
                           <button 
                             onClick={() => updateCartItem(item._id, item.quantity + 1)}
                             disabled={item.quantity >= (item.product?.stock || 0)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gradient-to-r hover:from-[#D97A22]/10 hover:via-[#D97A22]/10 hover:to-[#D97A22]/10 hover:border-[#D97A22] hover:text-[#D97A22] disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all duration-200 cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-[#C8D222]/10 hover:border-[#C8D222] hover:text-[#C8D222] disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all duration-200 cursor-pointer"
                           >
                             +
                           </button>
@@ -162,7 +180,6 @@ export default function CartPage() {
                         
                         {/* Price and Remove - Mobile Layout */}
                         <div className="sm:hidden text-right">
-                          {/* ✅ CALCULATE WITH VARIANT PRICE */}
                           <p className="font-semibold text-gray-900 text-sm">₹{((item.price || 0) * item.quantity).toFixed(2)}</p>
                           <button 
                             onClick={() => removeFromCart(item._id)}
@@ -175,7 +192,6 @@ export default function CartPage() {
                       
                       {/* Price and Remove - Desktop Layout */}
                       <div className="hidden sm:block text-right min-w-[100px]">
-                        {/* ✅ CALCULATE WITH VARIANT PRICE */}
                         <p className="font-semibold text-gray-900">₹{((item.price || 0) * item.quantity).toFixed(2)}</p>
                         <button 
                           onClick={() => removeFromCart(item._id)}
@@ -203,10 +219,10 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-sm sm:text-base">
                   <span>Shipping</span>
-                  <span className="text-[#D97A22]">FREE</span>
+                  <span className="text-[#C8D222]">FREE</span>
                 </div>
                 <div className="flex justify-between text-sm sm:text-base">
-                 <span>Tax (5%)</span>
+                  <span>Tax (5%)</span>
                   <span>₹{tax.toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-2 sm:pt-3 flex justify-between text-base sm:text-lg font-semibold">
@@ -217,7 +233,7 @@ export default function CartPage() {
 
               <button 
                 onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-[#D97A22] via-[#D97A22] to-[#D97A22] text-white py-3 rounded-lg hover:from-[#c56a1e] hover:via-[#c56a1e] hover:to-[#c56a1e] transition-all duration-200 font-medium mb-3 sm:mb-4 text-sm sm:text-base shadow-lg hover:shadow-[#D97A22]/25 cursor-pointer"
+                className="w-full bg-[#C8D222] text-black py-3 rounded-lg hover:bg-[#b8c41f] transition-all duration-200 font-medium mb-3 sm:mb-4 text-sm sm:text-base shadow-lg hover:shadow-[#C8D222]/25 cursor-pointer"
               >
                 Proceed to Checkout
               </button>
@@ -228,13 +244,13 @@ export default function CartPage() {
                   <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     <Link 
                       href="/login"
-                      className="bg-gradient-to-r from-[#D97A22] via-[#D97A22] to-[#D97A22] text-white py-2 px-4 rounded-lg hover:from-[#c56a1e] hover:via-[#c56a1e] hover:to-[#c56a1e] transition-all duration-200 font-medium text-center text-xs sm:text-sm shadow-lg hover:shadow-[#D97A22]/25"
+                      className="bg-[#C8D222] text-black py-2 px-4 rounded-lg hover:bg-[#b8c41f] transition-all duration-200 font-medium text-center text-xs sm:text-sm shadow-lg hover:shadow-[#C8D222]/25"
                     >
                       Login
                     </Link>
                     <Link 
                       href="/signup"
-                      className="border border-[#D97A22] text-[#D97A22] py-2 px-4 rounded-lg hover:bg-gradient-to-r hover:from-[#D97A22] hover:via-[#D97A22] hover:to-[#D97A22] hover:text-white transition-all duration-200 font-medium text-center text-xs sm:text-sm"
+                      className="border border-[#C8D222] text-[#C8D222] py-2 px-4 rounded-lg hover:bg-[#C8D222] hover:text-black transition-all duration-200 font-medium text-center text-xs sm:text-sm"
                     >
                       Sign Up
                     </Link>
@@ -244,7 +260,7 @@ export default function CartPage() {
               
               <Link 
                 href="/products"
-                className="w-full border border-[#D97A22] text-[#D97A22] py-3 rounded-lg hover:bg-gradient-to-r hover:from-[#D97A22] hover:via-[#D97A22] hover:to-[#D97A22] hover:text-white transition-all duration-200 font-medium text-center block text-sm sm:text-base"
+                className="w-full border border-[#C8D222] text-[#C8D222] py-3 rounded-lg hover:bg-[#C8D222] hover:text-black transition-all duration-200 font-medium text-center block text-sm sm:text-base"
               >
                 Continue Shopping
               </Link>

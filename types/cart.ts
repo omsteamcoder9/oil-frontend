@@ -1,11 +1,18 @@
 import { Product, ProductVariant } from './product';
 
+// types/cart.ts
+// types/cart.ts
 export interface CartItem {
   _id: string;
   product: Product;
   quantity: number;
   price: number;
-  selectedVariant?: ProductVariant; // ✅ Ensure this exists
+  variantId?: string;
+  variantName?: string;
+  variantImages?: string[];
+  weight?: number;        // ✅ ADDED
+  weightUnit?: string;    // ✅ ADDED
+  selectedVariant?: ProductVariant;
   createdAt: string;
   updatedAt: string;
 }
